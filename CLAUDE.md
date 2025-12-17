@@ -24,7 +24,11 @@ Tool_Master/
 │   │   ├── base.py             # BaseExecutor ABC
 │   │   ├── openai.py           # OpenAI function calling
 │   │   ├── anthropic.py        # Anthropic Claude tools
-│   │   └── generic.py          # Platform-agnostic executor
+│   │   ├── generic.py          # Platform-agnostic executor
+│   │   └── mcp.py              # Model Context Protocol executor
+│   ├── mcp_server/             # MCP Server integration
+│   │   ├── __init__.py
+│   │   └── server.py           # ToolMasterMCPServer class
 │   ├── providers/              # Credentials providers for OAuth tools
 │   │   ├── __init__.py         # GoogleCredentialsProvider Protocol
 │   │   └── google.py           # SimpleGoogleCredentials implementation
@@ -99,6 +103,7 @@ Adapters that transform tools into platform-specific formats:
 - **OpenAIExecutor**: OpenAI function calling format
 - **AnthropicExecutor**: Anthropic Claude tools format
 - **GenericExecutor**: Platform-agnostic format
+- **MCPExecutor**: Model Context Protocol format
 
 ```python
 from tool_master.executors import OpenAIExecutor
@@ -107,6 +112,41 @@ executor = OpenAIExecutor()
 openai_tools = executor.format_tools([my_tool])
 result = await executor.execute(my_tool, {"input": "test"})
 ```
+
+### MCP Integration
+
+Tool Master provides two ways to use tools with the Model Context Protocol:
+
+**1. MCPExecutor** - Format tools for MCP without running a server:
+
+```python
+from tool_master.executors import MCPExecutor
+
+executor = MCPExecutor()
+mcp_tools = executor.format_tools([my_tool])  # MCP tool schema format
+result = await executor.execute(my_tool, {"input": "test"})
+formatted = executor.format_result(result)  # MCP CallToolResult format
+```
+
+**2. ToolMasterMCPServer** - Run tools as a full MCP server:
+
+```python
+from tool_master.mcp_server import ToolMasterMCPServer
+from tool_master.tools.datetime_tools import get_current_time, format_date
+
+# Create server and register tools
+server = ToolMasterMCPServer("my-tools")
+server.register_tools([get_current_time, format_date])
+
+# Or register from a registry
+server.register_from_registry(my_registry)
+
+# Run with stdio transport (for MCP clients like Claude Desktop)
+import asyncio
+asyncio.run(server.run_stdio())
+```
+
+Install MCP support: `pip install tool-master[mcp]`
 
 ### Tool Registry
 Central registry for discovering and loading tools:
@@ -262,6 +302,6 @@ mypy src/tool_master
 - [x] OpenAI function calling
 - [x] Anthropic Claude tools
 - [x] Generic/platform-agnostic
+- [x] Model Context Protocol (MCP)
 - [ ] LangChain tools
-- [ ] Model Context Protocol (MCP)
 - [ ] Custom formats as needed

@@ -43,6 +43,9 @@ anthropic = [
 langchain = [
     "langchain-core>=0.1",
 ]
+mcp = [
+    "mcp>=1.2.0",
+]
 # Tool-specific dependencies
 weather = [
     "httpx>=0.24",
@@ -80,7 +83,7 @@ text-analysis = [
     "textblob>=0.17.1",
 ]
 all = [
-    "tool-master[dev,openai,anthropic,langchain,weather,wikipedia,finance,google,currency,dictionary,translation,geocoding,url,news,text-analysis]",
+    "tool-master[dev,openai,anthropic,langchain,mcp,weather,wikipedia,finance,google,currency,dictionary,translation,geocoding,url,news,text-analysis]",
 ]
 
 [project.urls]

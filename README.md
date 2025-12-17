@@ -5,7 +5,8 @@ A master library of reusable LLM tools with pluggable executors for drag-and-dro
 ## Features
 
 - **120 Ready-to-Use Tools** - DateTime, Dice, Weather, Wikipedia, Finance, Currency, Dictionary, Translation, Geocoding, URL, Text Analysis, News, Google Calendar, Google Sheets
-- **Multi-Platform Support** - Works with OpenAI, Anthropic Claude, and custom platforms
+- **Multi-Platform Support** - Works with OpenAI, Anthropic Claude, MCP, and custom platforms
+- **MCP Server Integration** - Expose tools as a Model Context Protocol server
 - **Pluggable Executors** - Adapters transform tools to any target format
 - **Credentials Provider Pattern** - Portable OAuth tools with swappable credential backends
 - **Tool Registry** - Discover and query tools by category or tags
@@ -52,6 +53,9 @@ pip install tool-master[news]
 
 # Text analysis tools (sentiment, language detection)
 pip install tool-master[text-analysis]
+
+# MCP (Model Context Protocol) support
+pip install tool-master[mcp]
 
 # All optional dependencies
 pip install tool-master[all]
@@ -370,6 +374,41 @@ executor = GenericExecutor()
 generic_format = executor.format_tools([get_weather])
 ```
 
+### MCP Executor
+
+```python
+from tool_master.executors import MCPExecutor
+
+executor = MCPExecutor()
+
+# Format tools for MCP
+mcp_format = executor.format_tools([get_weather, roll_dice])
+
+# Execute and get MCP-formatted result
+result = await executor.execute(get_weather, {"location": "Tokyo"})
+formatted = executor.format_result(result)  # {content: [...], isError: false}
+```
+
+### MCP Server
+
+Run Tool Master tools as a full MCP server for use with MCP-compatible clients like Claude Desktop.
+
+```python
+from tool_master.mcp_server import ToolMasterMCPServer
+from tool_master.tools import get_current_time, roll_dice, get_weather
+
+# Create server and register tools
+server = ToolMasterMCPServer("my-tools")
+server.register_tools([get_current_time, roll_dice, get_weather])
+
+# Or register from a registry
+server.register_from_registry(my_registry)
+
+# Run with stdio transport
+import asyncio
+asyncio.run(server.run_stdio())
+```
+
 ## Tool Registry
 
 Organize and discover tools by category or tags.
@@ -519,7 +558,8 @@ for schema in CALENDAR_SCHEMAS:
 Tool_Master/
 ├── src/tool_master/
 │   ├── schemas/           # Tool, ToolParameter, ToolResult models
-│   ├── executors/         # OpenAI, Anthropic, Generic adapters
+│   ├── executors/         # OpenAI, Anthropic, MCP, Generic adapters
+│   ├── mcp_server/        # MCP Server integration
 │   ├── providers/         # Credentials provider interfaces
 │   ├── registry/          # ToolRegistry and @tool decorator
 │   ├── tools/             # Built-in tool implementations
