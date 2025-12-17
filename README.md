@@ -61,6 +61,24 @@ pip install tool-master[mcp]
 pip install tool-master[all]
 ```
 
+## Environment Setup
+
+Some tools require API keys or OAuth credentials. Copy the example environment file and fill in your credentials:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required For | How to Obtain |
+|----------|--------------|---------------|
+| `WEATHER_API_KEY` | Weather tools | [weatherapi.com](https://www.weatherapi.com/) (free tier) |
+| `NEWS_API_KEY` | News tools | [newsapi.org](https://newsapi.org/register) (free tier) |
+| `GOOGLE_CLIENT_ID` | Calendar & Sheets | [Google Cloud Console](https://console.cloud.google.com/) |
+| `GOOGLE_CLIENT_SECRET` | Calendar & Sheets | [Google Cloud Console](https://console.cloud.google.com/) |
+| `GOOGLE_REFRESH_TOKEN` | Calendar & Sheets | OAuth flow (see [OAuth Setup](#oauth-setup)) |
+
+Most tools work without any credentials (Currency, Dictionary, Translation, Geocoding, URL, Wikipedia, Finance, DateTime, Dice, Text Analysis).
+
 ## Quick Start
 
 ```python
