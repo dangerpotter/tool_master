@@ -411,17 +411,20 @@ def temp_json_file(tmp_path):
 When writing tests for a tool, cover:
 
 1. **Schema Tests**
+
    - [ ] Tool name is correct
    - [ ] Description is meaningful
    - [ ] Required parameters are marked required
    - [ ] Optional parameters have defaults
 
 2. **Happy Path Tests**
+
    - [ ] Basic execution with minimal params
    - [ ] Execution with all optional params
    - [ ] Various valid input combinations
 
 3. **Error Handling Tests**
+
    - [ ] Missing required parameters
    - [ ] Invalid parameter types
    - [ ] Invalid parameter values (out of range, bad format)
@@ -465,7 +468,3 @@ asyncio_mode = "auto"
 ```
 
 The `asyncio_mode = "auto"` means `@pytest.mark.asyncio` is automatically applied to async test functions.
-
-## Supporting Documentation
-
-- **[checklist.md](checklist.md)** - Validation checklist for new tools
