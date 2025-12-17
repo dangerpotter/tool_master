@@ -13,7 +13,19 @@ from tool_master.tools.datetime_tools import (
 from tool_master.tools.dice_tools import roll_dice
 
 # Weather tools
-from tool_master.tools.weather_tools import get_weather, get_hourly_weather
+from tool_master.tools.weather_tools import (
+    get_weather,
+    get_hourly_weather,
+    search_weather_locations,
+    get_weather_alerts,
+    get_air_quality,
+    get_timezone,
+    get_astronomy,
+    get_historical_weather,
+    get_future_weather,
+    get_marine_weather,
+    get_sports_events,
+)
 
 # Wikipedia tools
 from tool_master.tools.wikipedia_tools import (
@@ -134,6 +146,15 @@ __all__ = [
     # Weather
     "get_weather",
     "get_hourly_weather",
+    "search_weather_locations",
+    "get_weather_alerts",
+    "get_air_quality",
+    "get_timezone",
+    "get_astronomy",
+    "get_historical_weather",
+    "get_future_weather",
+    "get_marine_weather",
+    "get_sports_events",
     # Wikipedia
     "search_wikipedia",
     "get_wikipedia_article",

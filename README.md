@@ -4,7 +4,7 @@ A master library of reusable LLM tools with pluggable executors for drag-and-dro
 
 ## Features
 
-- **140 Ready-to-Use Tools** - DateTime, Dice, Weather, Wikipedia, Finance, Currency, Dictionary, Translation, Geocoding, URL, Text Analysis, News, File Formats, Google Calendar, Google Sheets
+- **149 Ready-to-Use Tools** - DateTime, Dice, Weather, Wikipedia, Finance, Currency, Dictionary, Translation, Geocoding, URL, Text Analysis, News, File Formats, Google Calendar, Google Sheets
 - **Multi-Platform Support** - Works with OpenAI, Anthropic Claude, MCP, and custom platforms
 - **MCP Server Integration** - Expose tools as a Model Context Protocol server
 - **Pluggable Executors** - Adapters transform tools to any target format
@@ -105,7 +105,7 @@ openai_tools = executor.format_tools(registry.list_all())
 result = await executor.execute(get_current_time, {"timezone": "America/New_York"})
 ```
 
-## Available Tools (140 Total)
+## Available Tools (149 Total)
 
 ### DateTime Tools (5)
 
@@ -135,17 +135,31 @@ Supports: `d20`, `2d6+3`, `4d6 drop lowest`, `1d20 advantage`, `1d%` (percentile
 from tool_master.tools import roll_dice
 ```
 
-### Weather Tools (2)
+### Weather Tools (11)
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `get_weather` | Get weather conditions and daily forecast | `location`, `days` (optional) |
+| `get_weather` | Get weather conditions and daily forecast | `location`, `days` (optional, 1-7) |
 | `get_hourly_weather` | Get hour-by-hour forecast | `location`, `days` (optional, 1-3) |
+| `search_weather_locations` | Search/autocomplete locations | `query` |
+| `get_weather_alerts` | Get severe weather alerts/warnings | `location` |
+| `get_air_quality` | Get air quality index and pollutants | `location` |
+| `get_timezone` | Get timezone info for a location | `location` |
+| `get_astronomy` | Get sunrise, sunset, moon phases | `location`, `date` (optional) |
+| `get_historical_weather` | Get past weather (from 2010) | `location`, `date` |
+| `get_future_weather` | Get long-range forecast (14-300 days) | `location`, `date` |
+| `get_marine_weather` | Get marine/sailing forecast with tides | `location`, `days` (optional, 1-7) |
+| `get_sports_events` | Get sports events (football, cricket, golf) | `query` |
 
 Requires: `WEATHER_API_KEY` environment variable (WeatherAPI.com)
 
 ```python
-from tool_master.tools import get_weather, get_hourly_weather
+from tool_master.tools import (
+    get_weather, get_hourly_weather, search_weather_locations,
+    get_weather_alerts, get_air_quality, get_timezone, get_astronomy,
+    get_historical_weather, get_future_weather, get_marine_weather,
+    get_sports_events,
+)
 ```
 
 ### Wikipedia Tools (3)

@@ -39,7 +39,7 @@ Tool_Master/
 │   │   ├── __init__.py
 │   │   ├── datetime_tools.py   # Date/time tools (5)
 │   │   ├── dice_tools.py       # Dice rolling (1)
-│   │   ├── weather_tools.py    # Weather API (2)
+│   │   ├── weather_tools.py    # Weather API (11)
 │   │   ├── wikipedia_tools.py  # Wikipedia (3)
 │   │   ├── finance_tools.py    # Stock/finance (11)
 │   │   ├── currency_tools.py   # Currency exchange (5)
@@ -270,7 +270,7 @@ mypy src/tool_master
 3. Implement `format_tool`, `format_tools`, `execute`, `format_result`
 4. Export from `executors/__init__.py`
 
-## Existing Tools (140 Total)
+## Existing Tools (149 Total)
 
 **Standalone Tools:**
 - [x] DateTime tools (5 tools) - datetime_tools.py
@@ -278,8 +278,10 @@ mypy src/tool_master
 - [x] Dice tools (1 tool) - dice_tools.py
 
 **API Key Tools:**
-- [x] Weather tools (2 tools) - weather_tools.py (WEATHER_API_KEY)
-  - get_weather, get_hourly_weather
+- [x] Weather tools (11 tools) - weather_tools.py (WEATHER_API_KEY)
+  - get_weather, get_hourly_weather, search_weather_locations, get_weather_alerts
+  - get_air_quality, get_timezone, get_astronomy
+  - get_historical_weather, get_future_weather, get_marine_weather, get_sports_events
 - [x] Wikipedia tools (3 tools) - wikipedia_tools.py
 - [x] News tools (3 tools) - news_tools.py (NEWS_API_KEY)
 
