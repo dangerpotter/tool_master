@@ -1,0 +1,4 @@
+{
+  "project": "Tool Master",
+  "description": "Master library of reusable LLM tools with pluggable executors"
+}
