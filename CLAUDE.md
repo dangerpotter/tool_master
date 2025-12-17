@@ -318,3 +318,6 @@ mypy src/tool_master
 - [x] Model Context Protocol (MCP)
 - [ ] LangChain tools
 - [ ] Custom formats as needed
+
+## README Updates
+Always update @README.md at the end of every plan. If you don't believe the update requires an edit to the README, inform the user.
