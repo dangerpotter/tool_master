@@ -19,6 +19,36 @@ logger = logging.getLogger(__name__)
 
 MICROLINK_BASE = "https://api.microlink.io"
 
+# Curated list of popular device presets for responsive design testing
+DEVICE_PRESETS = [
+    # Mobile - Apple
+    "iPhone 15 Pro Max",
+    "iPhone 15 Pro",
+    "iPhone 15",
+    "iPhone 14",
+    "iPhone SE",
+    # Mobile - Android
+    "Samsung Galaxy S23 Ultra",
+    "Samsung Galaxy S23",
+    "Pixel 8 Pro",
+    "Pixel 8",
+    # Tablets
+    "iPad Pro 12.9",
+    "iPad Pro 11",
+    "iPad Air",
+    "iPad Mini",
+    "Samsung Galaxy Tab S9",
+    # Desktop/Laptop
+    "MacBook Pro 16",
+    "MacBook Pro 14",
+    "MacBook Air",
+    "iMac 24",
+    "Desktop 1920x1080",
+    "Desktop 1440x900",
+]
+
+COLOR_SCHEMES = ["light", "dark"]
+
 
 async def _extract_url_metadata_async(url: str) -> dict:
     """Extract metadata from a URL."""
@@ -102,23 +132,33 @@ async def _take_screenshot_async(
     width: int = 1280,
     height: int = 800,
     full_page: bool = False,
+    device: Optional[str] = None,
+    color_scheme: Optional[str] = None,
 ) -> dict:
     """Take a screenshot of a webpage."""
     if not url.strip():
         raise ValueError("URL cannot be empty")
 
-    width = min(max(320, width), 3840)
-    height = min(max(240, height), 2160)
-
     params = {
         "url": url,
         "screenshot": "true",
-        "viewport.width": width,
-        "viewport.height": height,
     }
+
+    # If device is specified, use device preset (overrides width/height)
+    if device:
+        params["device"] = device
+    else:
+        # Use custom viewport dimensions
+        width = min(max(320, width), 3840)
+        height = min(max(240, height), 2160)
+        params["viewport.width"] = width
+        params["viewport.height"] = height
 
     if full_page:
         params["screenshot.fullPage"] = "true"
+
+    if color_scheme and color_scheme in COLOR_SCHEMES:
+        params["colorScheme"] = color_scheme
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -136,7 +176,7 @@ async def _take_screenshot_async(
             data = result.get("data", {})
             screenshot = data.get("screenshot", {})
 
-            return {
+            response_data = {
                 "url": data.get("url", url),
                 "title": data.get("title"),
                 "screenshot": {
@@ -146,9 +186,19 @@ async def _take_screenshot_async(
                     "type": screenshot.get("type"),
                     "size": screenshot.get("size"),
                 },
-                "viewport": {"width": width, "height": height},
                 "full_page": full_page,
             }
+
+            # Include device or viewport info based on what was used
+            if device:
+                response_data["device"] = device
+            else:
+                response_data["viewport"] = {"width": width, "height": height}
+
+            if color_scheme:
+                response_data["color_scheme"] = color_scheme
+
+            return response_data
 
     except httpx.TimeoutException:
         raise ValueError("Screenshot API request timed out")
@@ -161,6 +211,8 @@ def _take_screenshot_sync(
     width: int = 1280,
     height: int = 800,
     full_page: bool = False,
+    device: Optional[str] = None,
+    color_scheme: Optional[str] = None,
 ) -> dict:
     """Sync wrapper for take_screenshot."""
     try:
@@ -171,15 +223,15 @@ def _take_screenshot_sync(
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(
                     asyncio.run,
-                    _take_screenshot_async(url, width, height, full_page),
+                    _take_screenshot_async(url, width, height, full_page, device, color_scheme),
                 )
                 return future.result(timeout=65)
         else:
             return loop.run_until_complete(
-                _take_screenshot_async(url, width, height, full_page)
+                _take_screenshot_async(url, width, height, full_page, device, color_scheme)
             )
     except RuntimeError:
-        return asyncio.run(_take_screenshot_async(url, width, height, full_page))
+        return asyncio.run(_take_screenshot_async(url, width, height, full_page, device, color_scheme))
 
 
 async def _generate_pdf_async(url: str) -> dict:
@@ -309,7 +361,7 @@ extract_url_metadata = Tool(
 
 take_screenshot = Tool(
     name="take_screenshot",
-    description="Capture a screenshot of a webpage. Returns a URL to the generated screenshot image.",
+    description="Capture a screenshot of a webpage. Returns a URL to the generated screenshot image. Supports device presets for responsive design testing.",
     parameters=[
         ToolParameter(
             name="url",
@@ -320,14 +372,14 @@ take_screenshot = Tool(
         ToolParameter(
             name="width",
             type=ParameterType.INTEGER,
-            description="Viewport width in pixels (320-3840). Default is 1280.",
+            description="Viewport width in pixels (320-3840). Default is 1280. Ignored if device is specified.",
             required=False,
             default=1280,
         ),
         ToolParameter(
             name="height",
             type=ParameterType.INTEGER,
-            description="Viewport height in pixels (240-2160). Default is 800.",
+            description="Viewport height in pixels (240-2160). Default is 800. Ignored if device is specified.",
             required=False,
             default=800,
         ),
@@ -338,9 +390,23 @@ take_screenshot = Tool(
             required=False,
             default=False,
         ),
+        ToolParameter(
+            name="device",
+            type=ParameterType.STRING,
+            description="Device preset for responsive testing. Overrides width/height. Options: iPhone 15 Pro Max, iPhone 15 Pro, iPhone 15, iPhone 14, iPhone SE, Samsung Galaxy S23 Ultra, Samsung Galaxy S23, Pixel 8 Pro, Pixel 8, iPad Pro 12.9, iPad Pro 11, iPad Air, iPad Mini, Samsung Galaxy Tab S9, MacBook Pro 16, MacBook Pro 14, MacBook Air, iMac 24, Desktop 1920x1080, Desktop 1440x900.",
+            required=False,
+            enum=DEVICE_PRESETS,
+        ),
+        ToolParameter(
+            name="color_scheme",
+            type=ParameterType.STRING,
+            description="Force a specific color scheme for the page. Options: 'light' or 'dark'.",
+            required=False,
+            enum=COLOR_SCHEMES,
+        ),
     ],
     category="url",
-    tags=["url", "screenshot", "web", "image", "capture"],
+    tags=["url", "screenshot", "web", "image", "capture", "responsive", "device"],
 ).set_handler(_take_screenshot_sync)
 
 

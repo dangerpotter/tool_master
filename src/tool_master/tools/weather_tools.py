@@ -195,3 +195,144 @@ get_weather = Tool(
     category="weather",
     tags=["weather", "forecast", "temperature", "conditions"],
 ).set_handler(_get_weather_sync)
+
+
+def _format_hourly_response(data: dict) -> dict:
+    """Format the WeatherAPI response to extract hourly forecasts."""
+    location = data.get("location", {})
+    forecast_days = data.get("forecast", {}).get("forecastday", [])
+
+    result = {
+        "location": {
+            "name": location.get("name"),
+            "region": location.get("region"),
+            "country": location.get("country"),
+            "localtime": location.get("localtime"),
+            "timezone": location.get("tz_id"),
+        },
+        "hourly_forecast": [],
+    }
+
+    # Extract hourly data from each forecast day
+    for day in forecast_days:
+        hours = day.get("hour", [])
+        for hour in hours:
+            result["hourly_forecast"].append({
+                "time": hour.get("time"),
+                "temp_f": hour.get("temp_f"),
+                "temp_c": hour.get("temp_c"),
+                "feels_like_f": hour.get("feelslike_f"),
+                "feels_like_c": hour.get("feelslike_c"),
+                "condition": hour.get("condition", {}).get("text"),
+                "chance_of_rain": hour.get("chance_of_rain"),
+                "chance_of_snow": hour.get("chance_of_snow"),
+                "humidity": hour.get("humidity"),
+                "wind_mph": hour.get("wind_mph"),
+                "wind_dir": hour.get("wind_dir"),
+                "uv": hour.get("uv"),
+                "visibility_miles": hour.get("vis_miles"),
+                "precip_in": hour.get("precip_in"),
+            })
+
+    return result
+
+
+async def _get_hourly_weather_async(location: str, days: int = 1) -> dict:
+    """
+    Get hourly weather forecast for a location (async).
+
+    Args:
+        location: City name, address, lat/lon, or postal code
+        days: Number of forecast days (1-3, WeatherAPI free tier limit for hourly)
+
+    Returns:
+        dict with hourly weather data
+    """
+    api_key = os.getenv("WEATHER_API_KEY") or WEATHER_API_KEY
+    if not api_key:
+        logger.error("WEATHER_API_KEY not set in environment")
+        raise ValueError(
+            "Weather API key not configured. Set WEATHER_API_KEY environment variable."
+        )
+
+    if not location:
+        raise ValueError("Location is required")
+
+    # Limit to 3 days for hourly data (API limitation)
+    days = max(1, min(3, days))
+
+    params = {
+        "key": api_key,
+        "q": location,
+        "days": days,
+        "aqi": "no",
+        "alerts": "no",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{WEATHER_API_BASE}/forecast.json", params=params
+            )
+
+            if response.status_code != 200:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get("error", {}).get("message", response.text)
+                except Exception:
+                    error_msg = response.text
+                logger.error(f"Weather API error {response.status_code}: {error_msg}")
+                raise ValueError(f"Weather API error: {error_msg}")
+
+            data = response.json()
+            return _format_hourly_response(data)
+
+    except httpx.TimeoutException:
+        logger.error("Weather API request timed out")
+        raise ValueError("Weather API request timed out")
+    except httpx.RequestError as e:
+        logger.error(f"Weather API request error: {e}")
+        raise ValueError(f"Weather API request failed: {str(e)}")
+
+
+def _get_hourly_weather_sync(location: str, days: int = 1) -> dict:
+    """Sync wrapper for get_hourly_weather."""
+    import asyncio
+
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(
+                    asyncio.run, _get_hourly_weather_async(location, days)
+                )
+                return future.result(timeout=15)
+        else:
+            return loop.run_until_complete(_get_hourly_weather_async(location, days))
+    except RuntimeError:
+        return asyncio.run(_get_hourly_weather_async(location, days))
+
+
+get_hourly_weather = Tool(
+    name="get_hourly_weather",
+    description="Get hourly weather forecast for a location. Returns hour-by-hour temperature, conditions, precipitation chances, humidity, and wind for up to 3 days.",
+    parameters=[
+        ToolParameter(
+            name="location",
+            type=ParameterType.STRING,
+            description="The location to get weather for. Can be a city name (e.g., 'London'), city and country (e.g., 'Paris, France'), US zip code (e.g., '10001'), UK postcode, or coordinates (e.g., '48.8567,2.3508').",
+            required=True,
+        ),
+        ToolParameter(
+            name="days",
+            type=ParameterType.INTEGER,
+            description="Number of forecast days to include (1-3). Default is 1. Each day includes 24 hourly forecasts.",
+            required=False,
+            default=1,
+        ),
+    ],
+    category="weather",
+    tags=["weather", "forecast", "hourly", "temperature", "conditions"],
+).set_handler(_get_hourly_weather_sync)

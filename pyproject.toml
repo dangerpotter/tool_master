@@ -71,6 +71,7 @@ translation = [
 ]
 geocoding = [
     "httpx>=0.24",
+    "timezonefinder>=6.0",
 ]
 url = [
     "httpx>=0.24",
@@ -82,8 +83,14 @@ text-analysis = [
     "langdetect>=1.0.9",
     "textblob>=0.17.1",
 ]
+files = [
+    "openpyxl>=3.1",
+    "pypdf>=4.0",
+    "python-pptx>=0.6",
+    "pillow>=10.0",
+]
 all = [
-    "tool-master[dev,openai,anthropic,langchain,mcp,weather,wikipedia,finance,google,currency,dictionary,translation,geocoding,url,news,text-analysis]",
+    "tool-master[dev,openai,anthropic,langchain,mcp,weather,wikipedia,finance,google,currency,dictionary,translation,geocoding,url,news,text-analysis,files]",
 ]
 
 [project.urls]

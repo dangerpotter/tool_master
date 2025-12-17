@@ -4,7 +4,7 @@ A master library of reusable LLM tools with pluggable executors for drag-and-dro
 
 ## Features
 
-- **120 Ready-to-Use Tools** - DateTime, Dice, Weather, Wikipedia, Finance, Currency, Dictionary, Translation, Geocoding, URL, Text Analysis, News, Google Calendar, Google Sheets
+- **140 Ready-to-Use Tools** - DateTime, Dice, Weather, Wikipedia, Finance, Currency, Dictionary, Translation, Geocoding, URL, Text Analysis, News, File Formats, Google Calendar, Google Sheets
 - **Multi-Platform Support** - Works with OpenAI, Anthropic Claude, MCP, and custom platforms
 - **MCP Server Integration** - Expose tools as a Model Context Protocol server
 - **Pluggable Executors** - Adapters transform tools to any target format
@@ -54,6 +54,9 @@ pip install tool-master[news]
 # Text analysis tools (sentiment, language detection)
 pip install tool-master[text-analysis]
 
+# File format tools (Excel, CSV, JSON, PDF, PowerPoint, Images)
+pip install tool-master[files]
+
 # MCP (Model Context Protocol) support
 pip install tool-master[mcp]
 
@@ -102,9 +105,9 @@ openai_tools = executor.format_tools(registry.list_all())
 result = await executor.execute(get_current_time, {"timezone": "America/New_York"})
 ```
 
-## Available Tools (120 Total)
+## Available Tools (140 Total)
 
-### DateTime Tools (4)
+### DateTime Tools (5)
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
@@ -112,9 +115,12 @@ result = await executor.execute(get_current_time, {"timezone": "America/New_York
 | `get_unix_timestamp` | Get current Unix timestamp | None |
 | `format_date` | Format a date string | `date`, `format` |
 | `parse_date` | Parse a date string | `date_string`, `format` |
+| `get_time_difference` | Get time difference between locations/timezones | `location1`, `location2` |
+
+Supports both city names (e.g., "Tokyo", "New York") and IANA timezones (e.g., "Asia/Tokyo", "America/New_York").
 
 ```python
-from tool_master.tools import get_current_time, get_unix_timestamp, format_date, parse_date
+from tool_master.tools import get_current_time, get_unix_timestamp, format_date, parse_date, get_time_difference
 ```
 
 ### Dice Tools (1)
@@ -129,16 +135,17 @@ Supports: `d20`, `2d6+3`, `4d6 drop lowest`, `1d20 advantage`, `1d%` (percentile
 from tool_master.tools import roll_dice
 ```
 
-### Weather Tools (1)
+### Weather Tools (2)
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `get_weather` | Get weather conditions and forecast | `location`, `days` (optional) |
+| `get_weather` | Get weather conditions and daily forecast | `location`, `days` (optional) |
+| `get_hourly_weather` | Get hour-by-hour forecast | `location`, `days` (optional, 1-3) |
 
 Requires: `WEATHER_API_KEY` environment variable (WeatherAPI.com)
 
 ```python
-from tool_master.tools import get_weather
+from tool_master.tools import get_weather, get_hourly_weather
 ```
 
 ### Wikipedia Tools (3)
@@ -251,11 +258,19 @@ from tool_master.tools import geolocate_ip, geocode_address, reverse_geocode, lo
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `extract_url_metadata` | Get title, description, images from URL | `url` |
-| `take_screenshot` | Capture screenshot of webpage | `url`, `width`, `height`, `full_page` |
+| `take_screenshot` | Capture screenshot of webpage | `url`, `width`, `height`, `full_page`, `device`, `color_scheme` |
 | `generate_pdf` | Generate PDF from webpage | `url` |
 | `expand_url` | Expand shortened URLs | `url` |
 
 No API key required - uses Microlink API.
+
+**Screenshot Device Presets:** The `take_screenshot` tool supports 20+ device presets for responsive design testing:
+- **Mobile (Apple):** iPhone 15 Pro Max, iPhone 15 Pro, iPhone 15, iPhone 14, iPhone SE
+- **Mobile (Android):** Samsung Galaxy S23 Ultra, Samsung Galaxy S23, Pixel 8 Pro, Pixel 8
+- **Tablets:** iPad Pro 12.9, iPad Pro 11, iPad Air, iPad Mini, Samsung Galaxy Tab S9
+- **Desktop:** MacBook Pro 16, MacBook Pro 14, MacBook Air, iMac 24, Desktop 1920x1080, Desktop 1440x900
+
+Also supports `color_scheme` parameter ("light" or "dark") to force a specific appearance.
 
 ```python
 from tool_master.tools import extract_url_metadata, take_screenshot, generate_pdf, expand_url
@@ -292,6 +307,75 @@ Requires: `NEWS_API_KEY` environment variable (NewsAPI.org)
 
 ```python
 from tool_master.tools import search_news, get_top_headlines, get_news_sources
+```
+
+### File Format Tools (18)
+
+**Excel Tools (4)**
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `read_excel` | Read .xlsx file contents | `file_path`, `sheet_name`, `max_rows` |
+| `write_excel` | Write data to .xlsx file | `file_path`, `data`, `sheet_name`, `headers` |
+| `list_excel_sheets` | List all sheets in workbook | `file_path` |
+| `read_excel_sheet_info` | Get sheet dimensions and headers | `file_path`, `sheet_name` |
+
+**CSV Tools (3)**
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `read_csv` | Read .csv file (auto-detect delimiter) | `file_path`, `max_rows`, `delimiter` |
+| `write_csv` | Write data to .csv file | `file_path`, `data`, `headers`, `delimiter` |
+| `csv_to_excel` | Convert CSV to Excel format | `csv_path`, `excel_path`, `sheet_name` |
+
+**JSON Tools (3)**
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `read_json` | Read and parse .json file | `file_path` |
+| `write_json` | Write data to .json file | `file_path`, `data`, `indent` |
+| `validate_json` | Validate JSON and get structure summary | `file_path` |
+
+**PDF Tools (3)**
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `read_pdf_text` | Extract text from PDF pages | `file_path`, `start_page`, `end_page` |
+| `read_pdf_metadata` | Get title, author, creation date | `file_path` |
+| `count_pdf_pages` | Quick page count | `file_path` |
+
+**PowerPoint Tools (2)**
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `read_pptx_text` | Extract text from all slides | `file_path` |
+| `read_pptx_structure` | Get slide count, titles, notes | `file_path` |
+
+**Image Tools (3)**
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `read_image_metadata` | Get dimensions, format, EXIF data | `file_path` |
+| `resize_image` | Resize image to dimensions | `file_path`, `output_path`, `width`, `height` |
+| `convert_image_format` | Convert between formats | `file_path`, `output_path`, `format` |
+
+No API key required - uses local libraries (openpyxl, pypdf, python-pptx, pillow).
+
+```python
+from tool_master.tools import (
+    # Excel
+    read_excel, write_excel, list_excel_sheets, read_excel_sheet_info,
+    # CSV
+    read_csv, write_csv, csv_to_excel,
+    # JSON
+    read_json, write_json, validate_json,
+    # PDF
+    read_pdf_text, read_pdf_metadata, count_pdf_pages,
+    # PowerPoint
+    read_pptx_text, read_pptx_structure,
+    # Image
+    read_image_metadata, resize_image, convert_image_format,
+)
 ```
 
 ### Google Calendar Tools (9)
@@ -565,7 +649,7 @@ for schema in CALENDAR_SCHEMAS:
 |----------|-------------|----------|
 | **Standalone** | None | DateTime, Dice |
 | **No Auth APIs** | None | Currency, Dictionary, Translation, Geocoding, URL |
-| **Local Libraries** | None (pip install) | Text Analysis (langdetect, textblob) |
+| **Local Libraries** | None (pip install) | Text Analysis, File Formats |
 | **API Key** | Environment variable | Weather, Wikipedia, News |
 | **OAuth** | Credentials Provider | Google Calendar, Sheets |
 | **External API** | None (yfinance) | Finance tools |
@@ -593,6 +677,7 @@ Tool_Master/
 │   │   ├── url_tools.py
 │   │   ├── text_analysis_tools.py
 │   │   ├── news_tools.py
+│   │   ├── file_tools.py
 │   │   └── google/        # OAuth tools (Calendar, Sheets)
 │   └── utils/             # Introspection utilities
 ├── tests/

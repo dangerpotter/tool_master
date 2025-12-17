@@ -1,10 +1,21 @@
 """Date and time tools."""
 
+import asyncio
+import concurrent.futures
 import time
+import zoneinfo
 from datetime import datetime, timezone
 from typing import Optional
 
+import httpx
+
 from tool_master.schemas.tool import ParameterType, Tool, ToolParameter
+
+# Nominatim API for geocoding (same as geocoding_tools.py)
+NOMINATIM_BASE = "https://nominatim.openstreetmap.org"
+NOMINATIM_HEADERS = {
+    "User-Agent": "ToolMaster/1.0 (LLM Tool Library; https://github.com/tool-master)"
+}
 
 
 def _get_unix_timestamp() -> dict:
@@ -167,3 +178,169 @@ get_unix_timestamp = Tool(
     category="datetime",
     tags=["time", "timestamp", "unix", "utility"],
 ).set_handler(_get_unix_timestamp)
+
+
+def _is_valid_timezone(tz_name: str) -> bool:
+    """Check if a string is a valid IANA timezone name."""
+    try:
+        zoneinfo.ZoneInfo(tz_name)
+        return True
+    except (KeyError, zoneinfo.ZoneInfoNotFoundError):
+        return False
+
+
+async def _geocode_location_async(location: str) -> tuple[float, float]:
+    """Geocode a location name to lat/lon coordinates."""
+    params = {"q": location, "format": "json", "limit": 1}
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.get(
+            f"{NOMINATIM_BASE}/search", params=params, headers=NOMINATIM_HEADERS
+        )
+
+        if response.status_code != 200:
+            raise ValueError(f"Geocoding API error: {response.text}")
+
+        data = response.json()
+
+        if not data:
+            raise ValueError(f"Could not find location: {location}")
+
+        return float(data[0]["lat"]), float(data[0]["lon"])
+
+
+def _get_timezone_from_coords(lat: float, lon: float) -> str:
+    """Get IANA timezone name from coordinates using timezonefinder."""
+    try:
+        from timezonefinder import TimezoneFinder
+
+        tf = TimezoneFinder()
+        tz_name = tf.timezone_at(lng=lon, lat=lat)
+        if tz_name is None:
+            raise ValueError(f"Could not determine timezone for coordinates ({lat}, {lon})")
+        return tz_name
+    except ImportError:
+        raise ImportError(
+            "timezonefinder package required for city name lookup. "
+            "Install with: pip install tool-master[geocoding]"
+        )
+
+
+async def _resolve_location_to_timezone_async(location: str) -> tuple[str, str]:
+    """
+    Resolve a location string to an IANA timezone.
+
+    Args:
+        location: Either an IANA timezone name or a city/place name
+
+    Returns:
+        Tuple of (original_input, timezone_name)
+    """
+    # First, try to parse as IANA timezone
+    if _is_valid_timezone(location):
+        return location, location
+
+    # If not a timezone, geocode the location and find its timezone
+    lat, lon = await _geocode_location_async(location)
+    tz_name = _get_timezone_from_coords(lat, lon)
+    return location, tz_name
+
+
+async def _get_time_difference_async(location1: str, location2: str) -> dict:
+    """Get the time difference between two locations or timezones."""
+    # Resolve both locations to timezones
+    input1, tz_name1 = await _resolve_location_to_timezone_async(location1)
+    input2, tz_name2 = await _resolve_location_to_timezone_async(location2)
+
+    # Get current time in both timezones
+    tz1 = zoneinfo.ZoneInfo(tz_name1)
+    tz2 = zoneinfo.ZoneInfo(tz_name2)
+
+    now_utc = datetime.now(timezone.utc)
+    now1 = now_utc.astimezone(tz1)
+    now2 = now_utc.astimezone(tz2)
+
+    # Calculate UTC offsets in hours
+    offset1_seconds = now1.utcoffset().total_seconds()
+    offset2_seconds = now2.utcoffset().total_seconds()
+
+    offset1_hours = offset1_seconds / 3600
+    offset2_hours = offset2_seconds / 3600
+
+    # Format offset strings
+    def format_offset(seconds: float) -> str:
+        hours = int(seconds // 3600)
+        minutes = int((abs(seconds) % 3600) // 60)
+        sign = "+" if hours >= 0 else "-"
+        return f"{sign}{abs(hours):02d}:{minutes:02d}"
+
+    offset1_str = format_offset(offset1_seconds)
+    offset2_str = format_offset(offset2_seconds)
+
+    # Calculate difference (positive means location2 is ahead)
+    diff_hours = offset2_hours - offset1_hours
+
+    # Generate description
+    if diff_hours == 0:
+        description = f"{input2} and {input1} are in the same timezone"
+    elif diff_hours > 0:
+        description = f"{input2} is {abs(diff_hours)} hour{'s' if abs(diff_hours) != 1 else ''} ahead of {input1}"
+    else:
+        description = f"{input2} is {abs(diff_hours)} hour{'s' if abs(diff_hours) != 1 else ''} behind {input1}"
+
+    return {
+        "location1": {
+            "input": input1,
+            "timezone": tz_name1,
+            "current_time": now1.isoformat(),
+            "utc_offset": offset1_str,
+        },
+        "location2": {
+            "input": input2,
+            "timezone": tz_name2,
+            "current_time": now2.isoformat(),
+            "utc_offset": offset2_str,
+        },
+        "difference_hours": diff_hours,
+        "difference_description": description,
+    }
+
+
+def _get_time_difference_sync(location1: str, location2: str) -> dict:
+    """Sync wrapper for get_time_difference."""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(
+                    asyncio.run, _get_time_difference_async(location1, location2)
+                )
+                return future.result(timeout=30)
+        else:
+            return loop.run_until_complete(
+                _get_time_difference_async(location1, location2)
+            )
+    except RuntimeError:
+        return asyncio.run(_get_time_difference_async(location1, location2))
+
+
+get_time_difference = Tool(
+    name="get_time_difference",
+    description="Get the time difference between two locations or timezones. Accepts city names (e.g., 'Tokyo', 'New York') or IANA timezone names (e.g., 'America/New_York', 'Asia/Tokyo').",
+    parameters=[
+        ToolParameter(
+            name="location1",
+            type=ParameterType.STRING,
+            description="First location - can be a city name (e.g., 'Paris', 'Los Angeles') or IANA timezone (e.g., 'Europe/Paris', 'America/Los_Angeles')",
+            required=True,
+        ),
+        ToolParameter(
+            name="location2",
+            type=ParameterType.STRING,
+            description="Second location - can be a city name or IANA timezone",
+            required=True,
+        ),
+    ],
+    category="datetime",
+    tags=["time", "timezone", "difference", "city", "utility"],
+).set_handler(_get_time_difference_sync)

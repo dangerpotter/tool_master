@@ -6,13 +6,14 @@ from tool_master.tools.datetime_tools import (
     get_unix_timestamp,
     format_date,
     parse_date,
+    get_time_difference,
 )
 
 # Dice tools
 from tool_master.tools.dice_tools import roll_dice
 
 # Weather tools
-from tool_master.tools.weather_tools import get_weather
+from tool_master.tools.weather_tools import get_weather, get_hourly_weather
 
 # Wikipedia tools
 from tool_master.tools.wikipedia_tools import (
@@ -93,16 +94,46 @@ from tool_master.tools.news_tools import (
     get_news_sources,
 )
 
+# File format tools
+from tool_master.tools.file_tools import (
+    # Excel
+    read_excel,
+    write_excel,
+    list_excel_sheets,
+    read_excel_sheet_info,
+    # CSV
+    read_csv,
+    write_csv,
+    csv_to_excel,
+    # JSON
+    read_json,
+    write_json,
+    validate_json,
+    # PDF
+    read_pdf_text,
+    read_pdf_metadata,
+    count_pdf_pages,
+    # PowerPoint
+    read_pptx_text,
+    read_pptx_structure,
+    # Image
+    read_image_metadata,
+    resize_image,
+    convert_image_format,
+)
+
 __all__ = [
     # DateTime
     "get_current_time",
     "get_unix_timestamp",
     "format_date",
     "parse_date",
+    "get_time_difference",
     # Dice
     "roll_dice",
     # Weather
     "get_weather",
+    "get_hourly_weather",
     # Wikipedia
     "search_wikipedia",
     "get_wikipedia_article",
@@ -155,4 +186,28 @@ __all__ = [
     "search_news",
     "get_top_headlines",
     "get_news_sources",
+    # File Format - Excel
+    "read_excel",
+    "write_excel",
+    "list_excel_sheets",
+    "read_excel_sheet_info",
+    # File Format - CSV
+    "read_csv",
+    "write_csv",
+    "csv_to_excel",
+    # File Format - JSON
+    "read_json",
+    "write_json",
+    "validate_json",
+    # File Format - PDF
+    "read_pdf_text",
+    "read_pdf_metadata",
+    "count_pdf_pages",
+    # File Format - PowerPoint
+    "read_pptx_text",
+    "read_pptx_structure",
+    # File Format - Image
+    "read_image_metadata",
+    "resize_image",
+    "convert_image_format",
 ]

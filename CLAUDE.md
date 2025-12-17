@@ -37,9 +37,9 @@ Tool_Master/
 │   │   └── registry.py         # ToolRegistry, @tool decorator
 │   ├── tools/                  # Built-in tool implementations
 │   │   ├── __init__.py
-│   │   ├── datetime_tools.py   # Date/time tools (4)
+│   │   ├── datetime_tools.py   # Date/time tools (5)
 │   │   ├── dice_tools.py       # Dice rolling (1)
-│   │   ├── weather_tools.py    # Weather API (1)
+│   │   ├── weather_tools.py    # Weather API (2)
 │   │   ├── wikipedia_tools.py  # Wikipedia (3)
 │   │   ├── finance_tools.py    # Stock/finance (11)
 │   │   ├── currency_tools.py   # Currency exchange (5)
@@ -49,6 +49,7 @@ Tool_Master/
 │   │   ├── url_tools.py        # URL metadata/screenshots (4)
 │   │   ├── text_analysis_tools.py # Sentiment/NLP (5)
 │   │   ├── news_tools.py       # News API (3)
+│   │   ├── file_tools.py       # File formats (18)
 │   │   └── google/             # Google API tools (OAuth required)
 │   │       ├── __init__.py     # Factory function exports
 │   │       ├── calendar_tools.py   # Calendar schemas + factory
@@ -186,7 +187,7 @@ OAuth-dependent tools (like Google Calendar/Sheets) use the Credentials Provider
 |----------|----------|---------|-------------|
 | **Standalone** | dice, datetime | Included | None |
 | **No Auth APIs** | currency, dictionary, translation, geocoding, url | Included | None |
-| **Local Libraries** | text_analysis | Included | pip install |
+| **Local Libraries** | text_analysis, file_tools | Included | pip install |
 | **API Key** | weather, wikipedia, news | Included | Env var |
 | **External API** | finance | Included | yfinance |
 | **OAuth** | Calendar, Sheets | Factory-created | Credentials Provider |
@@ -269,14 +270,16 @@ mypy src/tool_master
 3. Implement `format_tool`, `format_tools`, `execute`, `format_result`
 4. Export from `executors/__init__.py`
 
-## Existing Tools (120 Total)
+## Existing Tools (140 Total)
 
 **Standalone Tools:**
-- [x] DateTime tools (4 tools) - datetime_tools.py
+- [x] DateTime tools (5 tools) - datetime_tools.py
+  - get_current_time, get_unix_timestamp, format_date, parse_date, get_time_difference
 - [x] Dice tools (1 tool) - dice_tools.py
 
 **API Key Tools:**
-- [x] Weather tools (1 tool) - weather_tools.py (WEATHER_API_KEY)
+- [x] Weather tools (2 tools) - weather_tools.py (WEATHER_API_KEY)
+  - get_weather, get_hourly_weather
 - [x] Wikipedia tools (3 tools) - wikipedia_tools.py
 - [x] News tools (3 tools) - news_tools.py (NEWS_API_KEY)
 
@@ -286,9 +289,17 @@ mypy src/tool_master
 - [x] Translation tools (3 tools) - translation_tools.py
 - [x] Geocoding tools (4 tools) - geocoding_tools.py
 - [x] URL tools (4 tools) - url_tools.py
+  - take_screenshot supports 20+ device presets for responsive design testing
 
 **Local Library Tools:**
 - [x] Text Analysis tools (5 tools) - text_analysis_tools.py
+- [x] File Format tools (18 tools) - file_tools.py
+  - **Excel**: read_excel, write_excel, list_excel_sheets, read_excel_sheet_info
+  - **CSV**: read_csv, write_csv, csv_to_excel
+  - **JSON**: read_json, write_json, validate_json
+  - **PDF**: read_pdf_text, read_pdf_metadata, count_pdf_pages
+  - **PowerPoint**: read_pptx_text, read_pptx_structure
+  - **Image**: read_image_metadata, resize_image, convert_image_format
 
 **External API Tools:**
 - [x] Finance tools (11 tools) - finance_tools.py (yfinance)
